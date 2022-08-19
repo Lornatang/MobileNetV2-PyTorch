@@ -88,7 +88,7 @@ In the following table, the top-x error value in `()` indicates the result of th
 
 |    Model     |   Dataset   | Top-1 error (val) | Top-5 error (val) |
 |:------------:|:-----------:|:-----------------:|:-----------------:|
-| mobilenet_v2 | ImageNet_1K |   28.0%(**-**)    |     -(**-**)      |
+| mobilenet_v2 | ImageNet_1K | 28.0%(**28.0%**)  |    -(**9.4%**)    |
 
 ```bash
 # Download `MobileNetV2-ImageNet_1K-86ab0476.pth.tar` weights to `./results/pretrained_models`
