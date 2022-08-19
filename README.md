@@ -1,14 +1,14 @@
-# MobileNetV1-PyTorch
+# MobileNetV2-PyTorch
 
 ## Overview
 
 This repository contains an op-for-op PyTorch reimplementation
-of [MobileNets: Efficient Convolutional Neural Networks for Mobile Vision Applications](https://arxiv.org/pdf/1704.04861v1.pdf)
+of [MobileNetV2: Inverted Residuals and Linear Bottlenecks](https://arxiv.org/pdf/1801.04381v4.pdf)
 .
 
 ## Table of contents
 
-- [MobileNetV1-PyTorch](#mobilenetv1-pytorch)
+- [MobileNetV2-PyTorch](#mobilenetv2-pytorch)
     - [Overview](#overview)
     - [Table of contents](#table-of-contents)
     - [Download weights](#download-weights)
@@ -20,7 +20,7 @@ of [MobileNets: Efficient Convolutional Neural Networks for Mobile Vision Applic
     - [Result](#result)
     - [Contributing](#contributing)
     - [Credit](#credit)
-        - [MobileNets: Efficient Convolutional Neural Networks for Mobile Vision Applications](#mobilenets-efficient-convolutional-neural-networks-for-mobile-vision-applications)
+        - [MobileNetV2: Inverted Residuals and Linear Bottlenecks](#mobilenetv2-inverted-residuals-and-linear-bottlenecks)
 
 ## Download weights
 
@@ -42,12 +42,12 @@ Both training and testing only need to modify the `config.py` file.
 
 ### Test
 
-- line 29: `model_arch_name` change to `mobilenet_v1`.
+- line 29: `model_arch_name` change to `mobilenet_v2`.
 - line 31: `model_mean_parameters` change to `[0.485, 0.456, 0.406]`.
 - line 32: `model_std_parameters` change to `[0.229, 0.224, 0.225]`.
 - line 34: `model_num_classes` change to `1000`.
 - line 36: `mode` change to `test`.
-- line 89: `model_weights_path` change to `./results/pretrained_models/MobileNetV1-ImageNet_1K.pth.tar`.
+- line 89: `model_weights_path` change to `./results/pretrained_models/MobileNetV2-ImageNet_1K-86ab0476.pth.tar`.
 
 ```bash
 python3 test.py
@@ -55,12 +55,13 @@ python3 test.py
 
 ### Train model
 
-- line 29: `model_arch_name` change to `mobilenet_v1`.
+- line 29: `model_arch_name` change to `mobilenet_v2`.
 - line 31: `model_mean_parameters` change to `[0.485, 0.456, 0.406]`.
 - line 32: `model_std_parameters` change to `[0.229, 0.224, 0.225]`.
 - line 34: `model_num_classes` change to `1000`.
 - line 36: `mode` change to `train`.
-- line 50: `pretrained_model_weights_path` change to `./results/pretrained_models/MobileNetV1-ImageNet_1K.pth.tar`.
+- line 50: `pretrained_model_weights_path` change
+  to `./results/pretrained_models/MobileNetV2-ImageNet_1K-86ab0476.pth.tar`.
 
 ```bash
 python3 train.py
@@ -68,12 +69,12 @@ python3 train.py
 
 ### Resume train model
 
-- line 29: `model_arch_name` change to `mobilenet_v1`.
+- line 29: `model_arch_name` change to `mobilenet_v2`.
 - line 31: `model_mean_parameters` change to `[0.485, 0.456, 0.406]`.
 - line 32: `model_std_parameters` change to `[0.229, 0.224, 0.225]`.
 - line 34: `model_num_classes` change to `1000`.
 - line 36: `mode` change to `train`.
-- line 53: `resume` change to `./samples/mobilenet_v1-ImageNet_1K/epoch_xxx.pth.tar`.
+- line 53: `resume` change to `./samples/mobilenet_v2-ImageNet_1K/epoch_xxx.pth.tar`.
 
 ```bash
 python3 train.py
@@ -81,16 +82,16 @@ python3 train.py
 
 ## Result
 
-Source of original paper results: [https://arxiv.org/pdf/1704.04861v1.pdf](https://arxiv.org/pdf/1704.04861v1.pdf))
+Source of original paper results: [https://arxiv.org/pdf/1801.04381v4.pdf](https://arxiv.org/pdf/1801.04381v4.pdf))
 
 In the following table, the top-x error value in `()` indicates the result of the project, and `-` indicates no test.
 
 |    Model     |   Dataset   | Top-1 error (val) | Top-5 error (val) |
 |:------------:|:-----------:|:-----------------:|:-----------------:|
-| mobilenet_v1 | ImageNet_1K |   29.4%(**-**)    |     -(**-**)      |
+| mobilenet_v2 | ImageNet_1K |   28.0%(**-**)    |     -(**-**)      |
 
 ```bash
-# Download `mobilenet_v1.pth.tar` weights to `./results/pretrained_models`
+# Download `MobileNetV2-ImageNet_1K-86ab0476.pth.tar` weights to `./results/pretrained_models`
 # More detail see `README.md<Download weights>`
 python3 ./inference.py 
 ```
@@ -102,13 +103,13 @@ Input:
 Output:
 
 ```text
-Build `mobilenet_v1` model successfully.
-Load `mobilenet_v1` model weights `/MobileNetV1-PyTorch/results/pretrained_models/mobilenet_v1.pth.tar` successfully.
-tench, Tinca tinca                                                          (81.23%)
-barracouta, snoek                                                           (1.41%)
-armadillo                                                                   (0.80%)
-dugong, Dugong dugon                                                        (0.11%)
-rock beauty, Holocanthus tricolor                                           (0.11%)
+Build `mobilenet_v2` model successfully.
+Load `mobilenet_v2` model weights `/MobileNetV2-PyTorch/results/pretrained_models/MobileNetV2-ImageNet_1K-86ab0476.pth.tar` successfully.
+tench, Tinca tinca                                                          (24.90%)
+barracouta, snoek                                                           (7.63%)
+gar, garfish, garpike, billfish, Lepisosteus osseus                         (1.00%)
+soccer ball                                                                 (0.71%)
+reel                                                                        (0.66%)
 ```
 
 ## Contributing
@@ -120,29 +121,35 @@ I look forward to seeing what the community does with these models!
 
 ### Credit
 
-#### MobileNets: Efficient Convolutional Neural Networks for Mobile Vision Applications
+#### MobileNetV2: Inverted Residuals and Linear Bottlenecks
 
-*Andrew G. Howard, Menglong Zhu, Bo Chen, Dmitry Kalenichenko, Weijun Wang, Tobias Weyand, Marco Andreetto, Hartwig
-Adam*
+*Mark Sandler, Andrew Howard, Menglong Zhu, Andrey Zhmoginov, Liang-Chieh Chen*
 
 ##### Abstract
 
-We present a class of efficient models called MobileNets for mobile and embedded vision applications. MobileNets are
-based on a streamlined architecture that uses depth-wise separable convolutions to build light weight deep neural
-networks. We introduce two simple global hyper-parameters that efficiently trade off between latency and accuracy. These
-hyper-parameters allow the model builder to choose the right sized model for their application based on the constraints
-of the problem. We present extensive experiments on resource and accuracy tradeoffs and show strong performance compared
-to other popular models on ImageNet classification. We then demonstrate the effectiveness of MobileNets across a wide
-range of applications and use cases including object detection, finegrain classification, face attributes and large
-scale geo-localization.
+In this paper we describe a new mobile architecture, MobileNetV2, that improves the state of the art performance of
+mobile models on multiple tasks and benchmarks as well as across a spectrum of different model sizes. We also describe
+efficient ways of applying these mobile models to object detection in a novel framework we call SSDLite. Additionally,
+we demonstrate how to build mobile semantic segmentation models through a reduced form of DeepLabv3 which we call Mobile
+DeepLabv3.
+The MobileNetV2 architecture is based on an inverted residual structure where the input and output of the residual block
+are thin bottleneck layers opposite to traditional residual models which use expanded representations in the input an
+MobileNetV2 uses lightweight depthwise convolutions to filter features in the intermediate expansion layer.
+Additionally, we find that it is important to remove non-linearities in the narrow layers in order to maintain
+representational power. We demonstrate that this improves performance and provide an intuition that led to this design.
+Finally, our approach allows decoupling of the input/output domains from the expressiveness of the transformation, which
+provides a convenient framework for further analysis. We measure our performance on Imagenet classification, COCO object
+detection, VOC image segmentation. We evaluate the trade-offs between accuracy, and number of operations measured by
+multiply-adds (MAdd), as well as the number of parameters
 
-[[Paper]](https://arxiv.org/pdf/1704.04861v1.pdf)
+[[Paper]](https://arxiv.org/pdf/1801.04381v4.pdf)
 
 ```bibtex
-@article{howard2017mobilenets,
-  title={Mobilenets: Efficient convolutional neural networks for mobile vision applications},
-  author={Howard, Andrew G and Zhu, Menglong and Chen, Bo and Kalenichenko, Dmitry and Wang, Weijun and Weyand, Tobias and Andreetto, Marco and Adam, Hartwig},
-  journal={arXiv preprint arXiv:1704.04861},
-  year={2017}
+@inproceedings{sandler2018mobilenetv2,
+  title={Mobilenetv2: Inverted residuals and linear bottlenecks},
+  author={Sandler, Mark and Howard, Andrew and Zhu, Menglong and Zhmoginov, Andrey and Chen, Liang-Chieh},
+  booktitle={Proceedings of the IEEE conference on computer vision and pattern recognition},
+  pages={4510--4520},
+  year={2018}
 }
 ```

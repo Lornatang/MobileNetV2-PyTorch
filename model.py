@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from typing import Callable, Any, Optional
+from typing import Any, List
 
 import torch
 from torch import Tensor
@@ -19,49 +19,75 @@ from torch import nn
 from torchvision.ops.misc import Conv2dNormActivation
 
 __all__ = [
-    "MobileNetV1",
-    "DepthWiseSeparableConv2d",
-    "mobilenet_v1",
+    "MobileNetV2",
+    "InvertedResidual",
+    "mobilenet_v2",
+]
+
+mobilenet_v2_inverted_residual_cfg: List[list[int, int, int, int]] = [
+    # expand_ratio, out_channels, repeated times, stride
+    # t, c, n, s
+    [1, 16, 1, 1],
+    [6, 24, 2, 2],
+    [6, 32, 3, 2],
+    [6, 64, 4, 2],
+    [6, 96, 3, 1],
+    [6, 160, 3, 2],
+    [6, 320, 1, 1],
 ]
 
 
-class MobileNetV1(nn.Module):
+class MobileNetV2(nn.Module):
 
     def __init__(
             self,
             num_classes: int = 1000,
+            width_mult: float = 1.0,
+            dropout: float = 0.2,
     ) -> None:
-        super(MobileNetV1, self).__init__()
-        self.features = nn.Sequential(
+        super(MobileNetV2, self).__init__()
+        input_channels = 32
+        last_channels = 1280
+        classifier_channels = int(last_channels * max(1.0, width_mult))
+
+        features: List[nn.Module] = [
             Conv2dNormActivation(3,
-                                 32,
+                                 input_channels,
                                  kernel_size=3,
                                  stride=2,
                                  padding=1,
                                  norm_layer=nn.BatchNorm2d,
-                                 activation_layer=nn.ReLU,
+                                 activation_layer=nn.ReLU6,
+                                 inplace=True,
+                                 bias=False,
+                                 )
+        ]
+        for t, c, n, s in mobilenet_v2_inverted_residual_cfg:
+            output_channels = int(c * width_mult)
+            for i in range(n):
+                stride = s if i == 0 else 1
+                features.append(InvertedResidual(input_channels, output_channels, stride, t))
+                input_channels = output_channels
+        features.append(
+            Conv2dNormActivation(input_channels,
+                                 classifier_channels,
+                                 kernel_size=1,
+                                 stride=1,
+                                 padding=0,
+                                 norm_layer=nn.BatchNorm2d,
+                                 activation_layer=nn.ReLU6,
                                  inplace=True,
                                  bias=False,
                                  ),
-
-            DepthWiseSeparableConv2d(32, 64, 1),
-            DepthWiseSeparableConv2d(64, 128, 2),
-            DepthWiseSeparableConv2d(128, 128, 1),
-            DepthWiseSeparableConv2d(128, 256, 2),
-            DepthWiseSeparableConv2d(256, 256, 1),
-            DepthWiseSeparableConv2d(256, 512, 2),
-            DepthWiseSeparableConv2d(512, 512, 1),
-            DepthWiseSeparableConv2d(512, 512, 1),
-            DepthWiseSeparableConv2d(512, 512, 1),
-            DepthWiseSeparableConv2d(512, 512, 1),
-            DepthWiseSeparableConv2d(512, 512, 1),
-            DepthWiseSeparableConv2d(512, 1024, 2),
-            DepthWiseSeparableConv2d(1024, 1024, 1),
         )
+        self.features = nn.Sequential(*features)
 
-        self.avgpool = nn.AvgPool2d((7, 7))
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
 
-        self.classifier = nn.Linear(1024, num_classes)
+        self.classifier = nn.Sequential(
+            nn.Dropout(dropout, True),
+            nn.Linear(classifier_channels, num_classes),
+        )
 
         # Initialize neural network weights
         self._initialize_weights()
@@ -94,54 +120,71 @@ class MobileNetV1(nn.Module):
                 nn.init.zeros_(module.bias)
 
 
-class DepthWiseSeparableConv2d(nn.Module):
+class InvertedResidual(nn.Module):
     def __init__(
             self,
             in_channels: int,
             out_channels: int,
             stride: int,
-            norm_layer: Optional[Callable[..., nn.Module]] = None
+            expand_ratio: int,
     ) -> None:
-        super(DepthWiseSeparableConv2d, self).__init__()
+        super(InvertedResidual, self).__init__()
         self.stride = stride
+        self.use_res_connect = self.stride == 1 and in_channels == out_channels
+
+        hidden_channels = int(round(in_channels * expand_ratio))
+
         if stride not in [1, 2]:
             raise ValueError(f"stride should be 1 or 2 instead of {stride}")
 
-        if norm_layer is None:
-            norm_layer = nn.BatchNorm2d
-
-        self.conv = nn.Sequential(
-            Conv2dNormActivation(in_channels,
-                                 in_channels,
-                                 kernel_size=3,
-                                 stride=stride,
-                                 padding=1,
-                                 groups=in_channels,
-                                 norm_layer=norm_layer,
-                                 activation_layer=nn.ReLU,
-                                 inplace=True,
-                                 bias=False,
-                                 ),
-            Conv2dNormActivation(in_channels,
-                                 out_channels,
-                                 kernel_size=1,
-                                 stride=1,
-                                 padding=0,
-                                 norm_layer=norm_layer,
-                                 activation_layer=nn.ReLU,
-                                 inplace=True,
-                                 bias=False,
-                                 ),
-
+        block: List[nn.Module] = []
+        if expand_ratio != 1:
+            # point-wise
+            block.append(
+                Conv2dNormActivation(in_channels,
+                                     hidden_channels,
+                                     kernel_size=1,
+                                     stride=1,
+                                     padding=0,
+                                     norm_layer=nn.BatchNorm2d,
+                                     activation_layer=nn.ReLU6,
+                                     inplace=True,
+                                     bias=False,
+                                     )
+            )
+        # Depth-wise + point-wise layer
+        block.extend(
+            [
+                # Depth-wise
+                Conv2dNormActivation(
+                    hidden_channels,
+                    hidden_channels,
+                    kernel_size=3,
+                    stride=stride,
+                    padding=1,
+                    groups=hidden_channels,
+                    norm_layer=nn.BatchNorm2d,
+                    activation_layer=nn.ReLU6,
+                    inplace=True,
+                    bias=False,
+                ),
+                # point-wise layer
+                nn.Conv2d(hidden_channels, out_channels, kernel_size=(1, 1), stride=(1, 1), padding=(0, 0), bias=False),
+                nn.BatchNorm2d(out_channels),
+            ]
         )
+        self.conv = nn.Sequential(*block)
 
     def forward(self, x: Tensor) -> Tensor:
         out = self.conv(x)
 
+        if self.use_res_connect:
+            out = torch.add(out, x)
+
         return out
 
 
-def mobilenet_v1(**kwargs: Any) -> MobileNetV1:
-    model = MobileNetV1(**kwargs)
+def mobilenet_v2(**kwargs: Any) -> MobileNetV2:
+    model = MobileNetV2(**kwargs)
 
     return model
