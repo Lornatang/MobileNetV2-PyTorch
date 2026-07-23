@@ -1,5 +1,5 @@
-Pillow
-torch
+Pillow>=12.3.0
+torch>=2.13.0
 torchvision
 numpy
 opencv-python
